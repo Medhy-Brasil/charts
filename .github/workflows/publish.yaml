@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   publish:
-    runs-on: self-hosted
+    runs-on: ubuntu-22.04
     container: furgitecmedhy/ci-tooling:latest
     steps:
       - uses: actions/checkout@v2
