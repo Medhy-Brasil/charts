@@ -11,16 +11,6 @@ jobs:
     container: ubuntu
     steps:
       - uses: actions/checkout@v2
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-west-2
-      - name: Copy remote charts to local repo (in order to generate index.yaml correctly)
-        run: |
-          aws s3 sync s3://anotaai-all-charts dist/
-          ls -la dist/
       - name: Package charts
         run: |
           for dir in charts/*/; do
@@ -29,15 +19,6 @@ jobs:
           done
       - name: Create chart index
         run: |
-          helm repo index --url https://charts.anota.ai/ dist/
-      - name: Sync index and packaged charts to S3
-        uses: jakejarvis/s3-sync-action@master
-        with:
-          args: --follow-symlinks --delete
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_S3_BUCKET: anotaai-all-charts
-          AWS_REGION: us-west-2
-          SOURCE_DIR: 'dist/'
+          helm repo index --url https://medhy-brasil.github.io/charts --merge index.yaml .
+
 
