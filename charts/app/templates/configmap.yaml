@@ -1,0 +1,11 @@
+{{- if .Values.extraConfigMap.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "app.fullname" . }}-config
+data:
+{{- range $key, $val := .Values.extraConfigMap.configMap }}
+  {{ $key }}:
+   {{- toYaml $val | indent 2 -}}
+{{- end }}
+{{- end}}

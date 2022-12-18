@@ -1,0 +1,32 @@
+{{- if .Values.postUpgradeJob.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ include "app.fullname" . }}-post-upgrade"
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+  annotations:
+    checksum/env: {{ print .Values.postUpgradeJob.env | sha256sum }}
+    helm.sh/hook: post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  template:
+    metadata:
+      name: "{{ include "app.fullname" . }}-post-upgrade"
+      labels:
+        {{- include "app.labels" . | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: post-upgrade
+          image: {{ .Values.postUpgradeJob.image }}
+          {{- with .Values.postUpgradeJob.command }}
+          command:
+          {{- range $i, $val := . }}
+            - {{ $val | quote }}
+          {{- end }}
+          {{- end }}
+          envFrom:
+          - secretRef:
+              name: {{ include "app.fullname" . }}-post-upgrade-job-env
+{{- end }}

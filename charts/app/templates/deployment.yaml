@@ -1,0 +1,106 @@
+{{- if not .Values.probeOnly }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "app.fullname" . }}
+  annotations:
+    checksum/env: {{ print .Values.env | sha256sum }}
+    {{- if .Values.secretEnvs.enabled }}
+    checksum/secret-env: {{ print .Values.secretEnvs.template.data | sha256sum }}
+    {{- end }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.suspend }}
+  replicas: 0
+  {{- else if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- else }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "app.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/env: {{ print .Values.env | sha256sum }}
+        {{- if .Values.secretEnvs.enabled }}
+        checksum/secret-env: {{ print .Values.secretEnvs.template.data | sha256sum }}
+        {{- end }}
+      labels:
+        {{- include "app.labels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "app.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          {{- with .Values.command }}
+          command:
+          {{- range $i, $val := . }}
+            - {{ $val | quote }}
+          {{- end }}
+          {{- end }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.containerPort }}
+              protocol: TCP
+          {{- if .Values.serviceMonitor.enabled }}
+            - name: metrics
+              containerPort: {{ .Values.serviceMonitor.containerMetricsPort }}
+              protocol: TCP
+          {{- end }}
+          {{- if .Values.probes.enabled }}
+          livenessProbe:
+            {{- toYaml .Values.probes.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.probes.readinessProbe | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          envFrom:
+          - secretRef:
+              name: {{ include "app.fullname" . }}-env
+          {{- if .Values.secretEnvs.enabled }}
+          - secretRef:
+              name: {{ include "app.fullname" . }}-secret-env
+          {{- end }}
+          {{- if .Values.extraVolumeMounts.enabled }}
+          volumeMounts:
+            {{- toYaml .Values.extraVolumeMounts.volumeMounts | nindent 12 }}
+          {{- end}}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.interNodeAntiAffinityEnabled }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - {{ include "app.fullname" . }}
+                topologyKey: kubernetes.io/hostname
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.extraVolumes.enabled }}
+      volumes:
+        {{- toYaml .Values.extraVolumes.volumes | nindent 8 }}
+      {{- end}}
+{{- end }}
