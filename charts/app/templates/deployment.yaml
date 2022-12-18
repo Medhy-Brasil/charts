@@ -69,10 +69,6 @@ spec:
           envFrom:
           - secretRef:
               name: {{ include "app.fullname" . }}-env
-          {{- if .Values.secretEnvs.enabled }}
-          - secretRef:
-              name: {{ include "app.fullname" . }}-secret-env
-          {{- end }}
           {{- if .Values.extraVolumeMounts.enabled }}
           volumeMounts:
             {{- toYaml .Values.extraVolumeMounts.volumeMounts | nindent 12 }}
