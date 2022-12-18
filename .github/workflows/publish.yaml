@@ -21,6 +21,7 @@ jobs:
     container: ubuntu
     steps:
       - uses: actions/checkout@v2
+      - uses: azure/setup-helm@v3
       - name: Package charts
         run: |
           for dir in charts/*/; do
