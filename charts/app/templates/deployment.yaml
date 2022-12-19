@@ -5,9 +5,6 @@ metadata:
   name: {{ include "app.fullname" . }}
   annotations:
     checksum/env: {{ print .Values.env | sha256sum }}
-    {{- if .Values.secretEnvs.enabled }}
-    checksum/secret-env: {{ print .Values.secretEnvs.template.data | sha256sum }}
-    {{- end }}
   labels:
     {{- include "app.labels" . | nindent 4 }}
 spec:
@@ -24,9 +21,6 @@ spec:
     metadata:
       annotations:
         checksum/env: {{ print .Values.env | sha256sum }}
-        {{- if .Values.secretEnvs.enabled }}
-        checksum/secret-env: {{ print .Values.secretEnvs.template.data | sha256sum }}
-        {{- end }}
       labels:
         {{- include "app.labels" . | nindent 8 }}
     spec:
